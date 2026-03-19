@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HERP評価フォーマッター</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a22;
+    --surface2: #22222e;
+    --border: #2e2e3e;
+    --accent: #7c6cfc;
+    --accent3: #6cfccc;
+    --text: #e8e8f0;
+    --text2: #9090a8;
+    --text3: #5a5a72;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 60px;
+  }
+
+  .header { text-align: center; margin-bottom: 40px; }
+  .header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .header p { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+  .container { width: 100%; max-width: 720px; display: flex; flex-direction: column; gap: 16px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+
+  .card-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+    color: var(--text3); text-transform: uppercase;
+    font-family: 'DM Mono', monospace; margin-bottom: 10px;
+  }
+
+  textarea {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px; line-height: 1.8; padding: 14px; resize: vertical;
+    outline: none; transition: border-color 0.15s;
+  }
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--text3); }
+  #input-memo { min-height: 200px; }
+  #output { min-height: 280px; }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 12px; justify-content: flex-end; align-items: center; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 20px; border-radius: 8px; font-size: 13px;
+    font-weight: 500; cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+    border: none; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-secondary { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--text2); color: var(--text); }
+  .btn-success { background: var(--accent3); color: var(--bg); }
+
+  .arrow { display: flex; align-items: center; justify-content: center; color: var(--text3); font-size: 20px; }
+
+  .loading { display: none; align-items: center; gap: 8px; font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .loading.show { display: flex; }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%, 100% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>HERP 評価フォーマッター</h1>
+  <p>Notion AI 議事録 → HERP評価欄用テキストに整形</p>
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <div class="card-label">Notion AI 議事録（貼り付け）</div>
+    <textarea id="input-memo" placeholder="Notion AIで生成された議事録をここに貼り付けてください"></textarea>
+    <div class="btn-row">
+      <div class="loading" id="loading">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <span>AIが整形中...</span>
+      </div>
+      <button class="btn btn-secondary" onclick="clearAll()">クリア</button>
+      <button class="btn btn-primary" id="btn-format" onclick="formatMemo()">✦ HERP用に整形する</button>
+    </div>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <div class="card">
+    <div class="card-label">HERP 評価欄用テキスト（コピーして貼り付け）</div>
+    <textarea id="output" placeholder="整形結果がここに表示されます" readonly></textarea>
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="btn-copy" onclick="copyOutput()">コピー</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SYSTEM_PROMPT = `あなたはLegalscapeの採用担当AIアシスタントです。
+面接議事録をもとに、HERPの評価欄に貼り付けるテキストを生成します。
+
+【Legalscapeのパーパス・経営理念・行動指針】
+
+パーパス：人とテクノロジーの共創による未来の法社会を実装する
+
+経営理念：
+1. 社会を切り拓いてきた「意志」をリスペクトし、自らも「意志」を持って社会を切り拓く
+2. 社会インフラを創る立場として、「高い視座」を持つ
+3. 「本質的かつ現実的」な社会インパクトに執着する
+
+行動指針：
+①自らの意志：自らの「意志」を持って世界を変える勇気を持ち、自らの役割を創り果たす。人の意志をリスペクトする。
+②高い視座：100年続く未来の法社会を実装する立場として多角的な視点を持ち、対立やトレードオフをブレイクスルーする。
+③価値への執着：本質的かつ現実的な価値に執着し、理想や議論だけで終わらせず泥臭く現実を変える。評論家にならない。
+④インテグリティ：誠実・真摯・一貫・高潔。自身・他者・事実に嘘をつかない。不都合な真実こそ開示する。
+⑤初心：経験や慣習・余計なプライドの予断を持たず、謙虚・素直に事象と向き合い、常に変化に開かれた状態を保つ。
+⑥自律からの共創：自律したプロフェッショナルとして信頼を築き、積極的に他者を巻き込み、チームとして個の総和以上の価値を共創する。
+
+【出力ルール】
+- 議事録から読み取れる情報のみをもとに評価する
+- 議事録から判断できない行動指針については「確認できず→次の選考官への確認ポイント」として明記する
+- 憶測・補完は絶対にしない。書いてあることだけを根拠にする
+- 出力は指定のフォーマットのみ。余計な説明・前置き・後書きは不要`;
+
+async function formatMemo() {
+  const input = document.getElementById('input-memo').value.trim();
+  if (!input) { alert('議事録を貼り付けてください'); return; }
+
+  const btn = document.getElementById('btn-format');
+  const loading = document.getElementById('loading');
+  btn.disabled = true;
+  loading.classList.add('show');
+  document.getElementById('output').value = '';
+
+  const userPrompt = `以下の面接議事録をもとに、Legalscapeの採用基準に照らしたHERP評価欄用テキストを生成してください。
+
+出力フォーマット：
+
+■Pros
+（議事録から読み取れる、Legalscapeの行動指針・経営理念にフィットしている点を箇条書き。根拠となる発言や行動も添える）
+
+■Cons
+（議事録から読み取れる懸念点を箇条書き。特になければ「特になし」）
+
+■行動指針ごとの確認状況
+①自らの意志：[確認できた / 確認できず]
+　→ 確認できた場合：根拠となる発言・エピソードを記載
+　→ 確認できなかった場合：「次の選考官への確認ポイント：○○を確認してください」と記載
+②高い視座：同上
+③価値への執着：同上
+④インテグリティ：同上
+⑤初心：同上
+⑥自律からの共創：同上
+
+■ヒアリングメモ
+（候補者の発言・転職軸・背景など面接で出た重要な情報を箇条書き）
+
+■申し送り事項
+（次の選考官へ：確認できなかった指針の確認ポイントや深掘りすべき観点をまとめる）
+
+---
+議事録：
+${input}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+
+    const data = await res.json();
+    const text = data.content?.map(c => c.text || '').join('') || 'エラーが発生しました';
+    document.getElementById('output').value = text;
+  } catch(e) {
+    document.getElementById('output').value = 'エラーが発生しました。ページを再読み込みしてください。';
+  }
+
+  btn.disabled = false;
+  loading.classList.remove('show');
+}
+
+function copyOutput() {
+  const text = document.getElementById('output').value;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('btn-copy');
+    btn.textContent = '✓ コピーしました！';
+    btn.classList.add('btn-success');
+    btn.classList.remove('btn-secondary');
+    setTimeout(() => {
+      btn.textContent = 'コピー';
+      btn.classList.remove('btn-success');
+      btn.classList.add('btn-secondary');
+    }, 2000);
+  });
+}
+
+function clearAll() {
+  document.getElementById('input-memo').value = '';
+  document.getElementById('output').value = '';
+}
+</script>
+</body>
+</html>
