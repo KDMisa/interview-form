@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>面接評価フォーム</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a22;
+    --surface2: #22222e;
+    --border: #2e2e3e;
+    --accent: #7c6cfc;
+    --accent2: #fc6c8f;
+    --accent3: #6cfccc;
+    --text: #e8e8f0;
+    --text2: #9090a8;
+    --text3: #5a5a72;
+    --s: #6cfccc;
+    --a: #7c6cfc;
+    --b: #fcd46c;
+    --c: #fc6c6c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text);
+  }
+  .header-sub {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+    margin-top: 2px;
+  }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    padding: 16px 32px 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 10px 20px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text3);
+    cursor: pointer;
+    border-radius: 6px 6px 0 0;
+    border: 1px solid transparent;
+    border-bottom: none;
+    white-space: nowrap;
+    transition: all 0.15s;
+    background: transparent;
+  }
+  .tab:hover { color: var(--text2); }
+  .tab.active {
+    color: var(--text);
+    background: var(--bg);
+    border-color: var(--border);
+    border-bottom-color: var(--bg);
+  }
+  .tab-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  /* ── Content ── */
+  .content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 32px;
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── Section ── */
+  .section {
+    margin-bottom: 28px;
+  }
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    text-transform: uppercase;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Radio Group ── */
+  .radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .radio-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 13px;
+    color: var(--text2);
+  }
+  .radio-item:hover {
+    border-color: var(--accent);
+    color: var(--text);
+    background: rgba(124,108,252,0.06);
+  }
+  .radio-item input { display: none; }
+  .radio-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .radio-item:has(input:checked) {
+    border-color: var(--accent);
+    background: rgba(124,108,252,0.1);
+    color: var(--text);
+  }
+  .radio-item:has(input:checked) .radio-dot {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+
+  /* ── Grade Radio ── */
+  .grade-group {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .grade-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .grade-item input { display: none; }
+  .grade-badge {
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 4px;
+  }
+  .grade-desc {
+    font-size: 10px;
+    color: var(--text3);
+    line-height: 1.4;
+  }
+  .grade-item[data-grade="S"] { --gc: var(--s); }
+  .grade-item[data-grade="A"] { --gc: var(--a); }
+  .grade-item[data-grade="B"] { --gc: var(--b); }
+  .grade-item[data-grade="C"] { --gc: var(--c); }
+  .grade-item:hover { border-color: var(--gc); background: color-mix(in srgb, var(--gc) 8%, transparent); }
+  .grade-item:has(input:checked) {
+    border-color: var(--gc);
+    background: color-mix(in srgb, var(--gc) 12%, transparent);
+  }
+  .grade-item:has(input:checked) .grade-badge { color: var(--gc); }
+  .grade-badge { color: var(--text3); }
+
+  /* ── Textarea ── */
+  .field-textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 12px 14px;
+    resize: vertical;
+    min-height: 90px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field-textarea:focus { border-color: var(--accent); }
+  .field-textarea::placeholder { color: var(--text3); }
+
+  /* ── Textarea large ── */
+  .field-textarea.large { min-height: 160px; }
+  .field-textarea.xlarge { min-height: 260px; }
+
+  /* ── Checklist ── */
+  .checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text2);
+    transition: all 0.15s;
+    line-height: 1.5;
+  }
+  .check-item:hover { border-color: var(--accent3); color: var(--text); }
+  .check-item input { display: none; }
+  .check-box {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    margin-top: 1px;
+    transition: all 0.15s;
+  }
+  .check-item:has(input:checked) {
+    border-color: var(--accent3);
+    background: rgba(108,252,204,0.06);
+    color: var(--text);
+  }
+  .check-item:has(input:checked) .check-box {
+    border-color: var(--accent3);
+    background: var(--accent3);
+  }
+
+  /* ── Next Action ── */
+  .action-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .action-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text2);
+    transition: all 0.15s;
+  }
+  .action-chip:hover { border-color: var(--accent2); color: var(--text); }
+  .action-chip input { display: none; }
+  .action-chip:has(input:checked) {
+    border-color: var(--accent2);
+    background: rgba(252,108,143,0.1);
+    color: var(--text);
+  }
+
+  /* ── Divider ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0 20px;
+  }
+
+  /* ── Tips Box ── */
+  .tips-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.8;
+    margin-bottom: 16px;
+  }
+  .tips-box strong { color: var(--text); }
+
+  /* ── Copy Button ── */
+  .btn-copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .btn-copy:hover { opacity: 0.85; }
+  .btn-copy.success { background: var(--accent3); color: var(--bg); }
+
+  /* ── Memo paste area ── */
+  .paste-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .paste-label {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── Info row ── */
+  .info-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .info-field label {
+    display: block;
+    font-size: 10px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .info-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .info-input:focus { border-color: var(--accent); }
+
+  /* ── Bottom bar ── */
+  .bottom-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    z-index: 100;
+  }
+  .btn-secondary {
+    padding: 8px 18px;
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-secondary:hover { border-color: var(--text2); color: var(--text); }
+  .btn-primary {
+    padding: 8px 20px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+
+  .spacer { height: 80px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">面接評価フォーム</div>
+    <div class="header-sub">ナレッジワーク · Talent Management</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('casual')">
+    <span class="tab-dot" style="background:#6cfccc"></span>カジュアル面談
+  </div>
+  <div class="tab" onclick="switchTab('doc')">
+    <span class="tab-dot" style="background:#9090a8"></span>書類選考
+  </div>
+  <div class="tab" onclick="switchTab('first')">
+    <span class="tab-dot" style="background:#7c6cfc"></span>一次面接
+  </div>
+  <div class="tab" onclick="switchTab('second')">
+    <span class="tab-dot" style="background:#fcd46c"></span>二次面接
+  </div>
+  <div class="tab" onclick="switchTab('final')">
+    <span class="tab-dot" style="background:#fc6c8f"></span>最終面接
+  </div>
+  <div class="tab" onclick="switchTab('memo')">
+    <span class="tab-dot" style="background:#fc9c6c"></span>議事録貼り付け
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- ── カジュアル面談 ── -->
+  <div class="panel active" id="panel-casual">
+    <div class="info-row">
+      <div class="info-field"><label>候補者名</label><input class="info-input" type="text" placeholder="例：山田 太郎"></div>
+      <div class="info-field"><label>面談日</label><input class="info-input" type="date"></div>
+      <div class="info-field"><label>担当者</label><input class="info-input" type="text" placeholder="例：福松 秀都"></div>
+      <div class="info-field"><label>応募ポジション</label><input class="info-input" type="text" placeholder="例：セールス / AXコンサルタント"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">面談結果</div>
+      <div class="radio-group">
+        <label class="radio-item"><input type="radio" name="c-result" value="1"><span class="radio-dot"></span>選考案内希望</label>
+        <label class="radio-item"><input type="radio" name="c-result" value="2"><span class="radio-dot"></span>先方に意欲あれば選考可能（NG寄り・こちらから積極案内はしない）</label>
+        <label class="radio-item"><input type="radio" name="c-result" value="3"><span class="radio-dot"></span>この時点でNG（選考調整は進めないよう人事側で調整）</label>
+        <label class="radio-item"><input type="radio" name="c-result" value="4"><span class="radio-dot"></span>保留（事業部内で相談してから判断）</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">評価の温度感</div>
+      <div class="radio-group">
+        <label class="radio-item"><input type="radio" name="c-temp" value="1"><span class="radio-dot"></span>優先的に進めたい！</label>
+        <label class="radio-item"><input type="radio" name="c-temp" value="2"><span class="radio-dot"></span>通常フローで問題ない</label>
+        <label class="radio-item"><input type="radio" name="c-temp" value="3"><span class="radio-dot"></span>少しゆっくりめで良い</label>
+        <label class="radio-item"><input type="radio" name="c-temp" value="4"><span class="radio-dot"></span>お見送り</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">MEMO</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:11px;color:var(--accent3);margin-bottom:6px;font-family:'DM Mono',monospace">PROS ＋</div>
+          <textarea class="field-textarea large" placeholder="要件とフィットしている点、その他印象"></textarea>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--accent2);margin-bottom:6px;font-family:'DM Mono',monospace">CONS −</div>
+          <textarea class="field-textarea large" placeholder="要件とアンマッチな点、その他懸念"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">内定承諾に向けた訴求ポイント</div>
+      <textarea class="field-textarea" placeholder="極めて優秀で採用したい場合、何を訴求すれば入社を決めてくれそうか"></textarea>
+    </div>
+
+    <div class="section">
+      <div class="section-label">ネクストアクション</div>
+      <div class="action-group">
+        <label class="action-chip"><input type="checkbox">継続面接の案内</label>
+        <label class="action-chip"><input type="checkbox">採用会食</label>
+        <label class="action-chip"><input type="checkbox">Keep In Touch</label>
+        <label class="action-chip"><input type="checkbox">LS Nightへのお誘い</label>
+        <label class="action-chip"><input type="checkbox">お見送り</label>
+        <label class="action-chip"><input type="checkbox">その他</label>
+      </div>
+    </div>
+
+    <button class="btn-copy" onclick="copyForm('panel-casual')">HERPにコピー</button>
+  </div>
+
+  <!-- ── 書類選考 ── -->
+  <div class="panel" id="panel-doc">
+    <div class="info-row">
+      <div class="info-field"><label>候補者名</label><input class="info-input" type="text" placeholder="例：山田 太郎"></div>
+      <div class="info-field"><label>選考日</label><input class="info-input" type="date"></div>
+      <div class="info-field"><label>担当者</label><input class="info-input" type="text"></div>
+      <div class="info-field"><label>応募ポジション</label><input class="info-input" type="text"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">評価結果</div>
+      <div class="radio-group">
+        <label class="radio-item"><input type="radio" name="d-result" value="pass"><span class="radio-dot"></span>通過</label>
+        <label class="radio-item"><input type="radio" name="d-result" value="ng"><span class="radio-dot"></span>お見送り</label>
+        <label class="radio-item"><input type="radio" name="d-result" value="hold"><span class="radio-dot"></span>保留</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">評価理由</div>
+      <textarea class="field-textarea large" placeholder="評価の理由を記載。エージェント経由の場合はフィードバックや社内振り返りのために必須記載"></textarea>
+    </div>
+
+    <button class="btn-copy" onclick="copyForm('panel-doc')">HERPにコピー</button>
+  </div>
+
+  <!-- ── 一次面接 ── -->
+  <div class="panel" id="panel-first">
+    <div class="info-row">
+      <div class="info-field"><label>候補者名</label><input class="info-input" type="text" placeholder="例：山田 太郎"></div>
+      <div class="info-field"><label>面接日</label><input class="info-input" type="date"></div>
+      <div class="info-field"><label>面接官</label><input class="info-input" type="text"></div>
+      <div class="info-field"><label>応募ポジション</label><input class="info-input" type="text"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">評価結果</div>
+      <div class="radio-group">
+        <label class="radio-item"><input type="radio" name="f-result" value="pass"><span class="radio-dot"></span>通過</label>
+        <label class="radio-item"><input type="radio" name="f-result" value="ng"><span class="radio-dot"></span>お見送り</label>
+        <label class="radio-item"><input type="radio" name="f-result" value="hold"><span class="radio-dot"></span>保留</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">温度感</div>
+      <div class="grade-group">
+        <label class="grade-item" data-grade="S"><input type="radio" name="f-grade" value="S"><span class="grade-badge">S</span><span class="grade-desc">魅力的な要素が<br>複数ある</span></label>
+        <label class="grade-item" data-grade="A"><input type="radio" name="f-grade" value="A"><span class="grade-badge">A</span><span class="grade-desc">魅力的な要素が<br>ある</span></label>
+        <label class="grade-item" data-grade="B"><input type="radio" name="f-grade" value="B"><span class="grade-badge">B</span><span class="grade-desc">及第点<br>（機会損失防止）</span></label>
+        <label class="grade-item" data-grade="C"><input type="radio" name="f-grade" value="C"><span class="grade-badge">C</span><span class="grade-desc">お見送り</span></label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">想定グレード</div>
+      <input class="info-input" type="text" placeholder="現時点での評価で問題なし（例：M2、IC3 等）" style="max-width:320px">
+    </div>
+
+    <div class="section">
+      <div class="section-label">評価内容</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:11px;color:var(--accent3);margin-bottom:6px;font-family:'DM Mono',monospace">PROS ＋</div>
+          <textarea class="field-textarea large" placeholder="要件とフィットしている点、その他印象"></textarea>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--accent2);margin-bottom:6px;font-family:'DM Mono',monospace">CONS −</div>
+          <textarea class="field-textarea large" placeholder="要件とアンマッチな点、その他懸念"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">ヒアリングメモ（人物観点）</div>
+      <div class="tips-box">
+        LSにマッチしそうな人材か？の観点で以下を意識して確認してください。<br>
+        <strong>プライド・虚栄心・自己保身・他責</strong> の程度 ／ 意思決定の方法と結果への受容 ／ <strong>原動力・モチベーション</strong>（好奇心？勝利？金？）／ 向上の方法・自己メタ認知 ／ <strong>自立・他者への依存</strong>
+      </div>
+      <textarea class="field-textarea large" placeholder="ヒアリングした内容を自由記述"></textarea>
+    </div>
+
+    <div class="section">
+      <div class="section-label">次回のご案内</div>
+      <div class="action-group">
+        <label class="action-chip"><input type="checkbox">通常の面接案内</label>
+        <label class="action-chip"><input type="checkbox">採用会食</label>
+        <label class="action-chip"><input type="checkbox">カジュアル面談</label>
+        <label class="action-chip"><input type="checkbox">お見送り</label>
+        <label class="action-chip"><input type="checkbox">Keep in touch（LS Night等）</label>
+        <label class="action-chip"><input type="checkbox">その他</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">申し送り事項</div>
+      <textarea class="field-textarea" placeholder="次の選考担当者への申し送り"></textarea>
+    </div>
+
+    <button class="btn-copy" onclick="copyForm('panel-first')">HERPにコピー</button>
+  </div>
+
+  <!-- ── 二次面接 ── -->
+  <div class="panel" id="panel-second">
+    <div class="info-row">
+      <div class="info-field"><label>候補者名</label><input class="info-input" type="text" placeholder="例：山田 太郎"></div>
+      <div class="info-field"><label>面接日</label><input class="info-input" type="date"></div>
+      <div class="info-field"><label>面接官</label><input class="info-input" type="text"></div>
+      <div class="info-field"><label>応募ポジション</label><input class="info-input" type="text"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">評価結果</div>
+      <div class="radio-group">
+        <label class="radio-item"><input type="radio" name="s-result" value="pass"><span class="radio-dot"></span>通過</label>
+        <label class="radio-item"><input type="radio" name="s-result" value="ng"><span class="radio-dot"></span>お見送り</label>
+        <label class="radio-item"><input type="radio" name="s-result" value="hold"><span class="radio-dot"></span>保留</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">温度感</div>
+      <div class="grade-group">
+        <label class="grade-item" data-grade="S"><input type="radio" name="s-grade" value="S"><span class="grade-badge">S</span><span class="grade-desc">魅力的な要素が<br>複数ある</span></label>
+        <label class="grade-item" data-grade="A"><input type="radio" name="s-grade" value="A"><span class="grade-badge">A</span><span class="grade-desc">魅力的な要素が<br>ある</span></label>
+        <label class="grade-item" data-grade="B"><input type="radio" name="s-grade" value="B"><span class="grade-badge">B</span><span class="grade-desc">及第点<br>（機会損失防止）</span></label>
+        <label class="grade-item" data-grade="C"><input type="radio" name="s-grade" value="C"><span class="grade-badge">C</span><span class="grade-desc">お見送り</span></label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">想定グレード</div>
+      <input class="info-input" type="text" placeholder="現時点での評価で問題なし" style="max-width:320px">
+    </div>
+
+    <div class="section">
+      <div class="section-label">評価内容</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:11px;color:var(--accent3);margin-bottom:6px;font-family:'DM Mono',monospace">PROS ＋</div>
+          <textarea class="field-textarea large" placeholder="要件とフィットしている点、その他印象"></textarea>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--accent2);margin-bottom:6px;font-family:'DM Mono',monospace">CONS −</div>
+          <textarea class="field-textarea large" placeholder="要件とアンマッチな点、その他懸念"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">ヒアリングメモ（人物観点）</div>
+      <div class="tips-box">
+        LSにマッチしそうな人材か？の観点で以下を意識して確認してください。<br>
+        <strong>プライド・虚栄心・自己保身・他責</strong> の程度 ／ 意思決定の方法と結果への受容 ／ <strong>原動力・モチベーション</strong>（好奇心？勝利？金？）／ 向上の方法・自己メタ認知 ／ <strong>自立・他者への依存</strong>
+      </div>
+      <textarea class="field-textarea large" placeholder="ヒアリングした内容を自由記述"></textarea>
+    </div>
+
+    <div class="section">
+      <div class="section-label">次回のご案内</div>
+      <div class="action-group">
+        <label class="action-chip"><input type="checkbox">通常の面接案内</label>
+        <label class="action-chip"><input type="checkbox">採用会食</label>
+        <label class="action-chip"><input type="checkbox">カジュアル面談</label>
+        <label class="action-chip"><input type="checkbox">お見送り</label>
+        <label class="action-chip"><input type="checkbox">Keep in touch</label>
+        <label class="action-chip"><input type="checkbox">その他</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">申し送り事項</div>
+      <textarea class="field-textarea" placeholder="次の選考担当者への申し送り"></textarea>
+    </div>
+
+    <button class="btn-copy" onclick="copyForm('panel-second')">HERPにコピー</button>
+  </div>
+
+  <!-- ── 最終面接 ── -->
+  <div class="panel" id="panel-final">
+    <div class="info-row">
+      <div class="info-field"><label>候補者名</label><input class="info-input" type="text" placeholder="例：山田 太郎"></div>
+      <div class="info-field"><label>面接日</label><input class="info-input" type="date"></div>
+      <div class="info-field"><label>面接官</label><input class="info-input" type="text"></div>
+      <div class="info-field"><label>応募ポジション</label><input class="info-input" type="text"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">評価結果</div>
+      <div class="radio-group">
+        <label class="radio-item"><input type="radio" name="fn-result" value="pass"><span class="radio-dot"></span>通過</label>
+        <label class="radio-item"><input type="radio" name="fn-result" value="ng"><span class="radio-dot"></span>お見送り</label>
+        <label class="radio-item"><input type="radio" name="fn-result" value="hold"><span class="radio-dot"></span>保留</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">温度感</div>
+      <div class="grade-group">
+        <label class="grade-item" data-grade="S"><input type="radio" name="fn-grade" value="S"><span class="grade-badge">S</span><span class="grade-desc">魅力的な要素が<br>複数ある</span></label>
+        <label class="grade-item" data-grade="A"><input type="radio" name="fn-grade" value="A"><span class="grade-badge">A</span><span class="grade-desc">魅力的な要素が<br>ある</span></label>
+        <label class="grade-item" data-grade="B"><input type="radio" name="fn-grade" value="B"><span class="grade-badge">B</span><span class="grade-desc">及第点</span></label>
+        <label class="grade-item" data-grade="C"><input type="radio" name="fn-grade" value="C"><span class="grade-badge">C</span><span class="grade-desc">お見送り</span></label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">評価内容</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:11px;color:var(--accent3);margin-bottom:6px;font-family:'DM Mono',monospace">PROS ＋</div>
+          <textarea class="field-textarea large" placeholder="要件とフィットしている点、その他印象"></textarea>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--accent2);margin-bottom:6px;font-family:'DM Mono',monospace">CONS −</div>
+          <textarea class="field-textarea large" placeholder="要件とアンマッチな点、その他懸念"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">ヒアリングメモ</div>
+      <textarea class="field-textarea large" placeholder="面接でのヒアリング内容を自由記述"></textarea>
+    </div>
+
+    <div class="section">
+      <div class="section-label">今後のご案内</div>
+      <div class="action-group">
+        <label class="action-chip"><input type="checkbox">オファー面談の実施</label>
+        <label class="action-chip"><input type="checkbox">採用会食の実施</label>
+        <label class="action-chip"><input type="checkbox">リファレンスチェック</label>
+        <label class="action-chip"><input type="checkbox">追加・面接/面談</label>
+        <label class="action-chip"><input type="checkbox">お見送り対応</label>
+        <label class="action-chip"><input type="checkbox">その他</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">その他申し送り等</div>
+      <textarea class="field-textarea" placeholder="引き継ぎ事項など"></textarea>
+    </div>
+
+    <button class="btn-copy" onclick="copyForm('panel-final')">HERPにコピー</button>
+  </div>
+
+  <!-- ── 議事録貼り付け ── -->
+  <div class="panel" id="panel-memo">
+    <div class="info-row">
+      <div class="info-field"><label>候補者名</label><input class="info-input" type="text" placeholder="例：山田 太郎"></div>
+      <div class="info-field"><label>面接日</label><input class="info-input" type="date"></div>
+      <div class="info-field"><label>面接種別</label>
+        <select class="info-input">
+          <option>カジュアル面談</option>
+          <option>書類選考</option>
+          <option>一次面接</option>
+          <option>二次面接</option>
+          <option>最終面接</option>
+        </select>
+      </div>
+      <div class="info-field"><label>担当者</label><input class="info-input" type="text"></div>
+    </div>
+
+    <div class="section">
+      <div class="paste-header">
+        <div class="section-label" style="margin:0">Notion AI 議事録（原文）</div>
+      </div>
+      <div class="divider"></div>
+      <textarea class="field-textarea xlarge" id="raw-memo" placeholder="Notion AIで生成された議事録をここに貼り付けてください"></textarea>
+    </div>
+
+    <div class="section">
+      <div class="paste-header">
+        <div class="section-label" style="margin:0">HERP貼り付け用サマリ</div>
+        <button class="btn-copy" id="btn-summarize" onclick="summarizeMemo()">✦ AIで整形する</button>
+      </div>
+      <div class="divider"></div>
+      <textarea class="field-textarea xlarge" id="summary-output" placeholder="「AIで整形する」を押すと、HERP評価欄に貼り付けやすい形式に整形されます"></textarea>
+    </div>
+
+    <button class="btn-copy" onclick="copySummary()">整形済みをコピー</button>
+  </div>
+
+  <div class="spacer"></div>
+</div>
+
+<div class="bottom-bar">
+  <button class="btn-secondary" onclick="clearForm()">クリア</button>
+  <button class="btn-primary" onclick="copyCurrentForm()">HERPにコピー</button>
+</div>
+
+<script>
+  let currentTab = 'casual';
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      const tabs = ['casual','doc','first','second','final','memo'];
+      t.classList.toggle('active', tabs[i] === tab);
+    });
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + tab).classList.add('active');
+  }
+
+  function copyForm(panelId) {
+    const panel = document.getElementById(panelId);
+    let text = '';
+    const candidate = panel.querySelector('input[placeholder*="候補者"]')?.value || '';
+    const date = panel.querySelector('input[type="date"]')?.value || '';
+    if (candidate) text += `【候補者】${candidate}\n`;
+    if (date) text += `【日付】${date}\n`;
+    text += '\n';
+
+    panel.querySelectorAll('.section').forEach(sec => {
+      const label = sec.querySelector('.section-label')?.textContent?.trim();
+      if (!label) return;
+      text += `■${label}\n`;
+
+      const checked = [...sec.querySelectorAll('input[type=radio]:checked, input[type=checkbox]:checked')]
+        .map(el => el.closest('label')?.textContent?.trim()).filter(Boolean);
+      if (checked.length) text += checked.join('、') + '\n';
+
+      sec.querySelectorAll('textarea').forEach(ta => {
+        if (ta.value) text += ta.value + '\n';
+      });
+      text += '\n';
+    });
+
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = panel.querySelector('.btn-copy');
+      const orig = btn.textContent;
+      btn.textContent = '✓ コピーしました！';
+      btn.classList.add('success');
+      setTimeout(() => { btn.textContent = orig; btn.classList.remove('success'); }, 2000);
+    });
+  }
+
+  function copyCurrentForm() {
+    const panelId = 'panel-' + currentTab;
+    if (currentTab === 'memo') { copySummary(); return; }
+    copyForm(panelId);
+  }
+
+  function copySummary() {
+    const text = document.getElementById('summary-output').value;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('#panel-memo .btn-copy:last-of-type');
+      const orig = btn.textContent;
+      btn.textContent = '✓ コピーしました！';
+      btn.classList.add('success');
+      setTimeout(() => { btn.textContent = orig; btn.classList.remove('success'); }, 2000);
+    });
+  }
+
+  async function summarizeMemo() {
+    const raw = document.getElementById('raw-memo').value;
+    if (!raw.trim()) {
+      alert('先に議事録を貼り付けてください');
+      return;
+    }
+    const btn = document.getElementById('btn-summarize');
+    btn.textContent = '整形中…';
+    btn.disabled = true;
+
+    const panel = document.getElementById('panel-memo');
+    const interviewType = panel.querySelector('select')?.value || '面接';
+    const candidate = panel.querySelector('input[placeholder*="候補者"]')?.value || '候補者';
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `以下は「${candidate}」さんの${interviewType}の議事録です。これをHERPの評価欄に貼り付けやすい形式に整形してください。
+
+出力形式：
+■評価内容
+【Pros】
+- （要件とフィットしている点・印象）
+
+【Cons】
+- （要件とアンマッチな点・懸念）
+
+■ヒアリングメモ
+（候補者の発言・特徴的な回答を箇条書き）
+
+■申し送り事項
+（次の選考担当者へのポイント）
+
+議事録：
+${raw}`
+          }]
+        })
+      });
+      const data = await res.json();
+      const output = data.content?.map(c => c.text || '').join('') || '整形に失敗しました';
+      document.getElementById('summary-output').value = output;
+    } catch(e) {
+      document.getElementById('summary-output').value = '整形に失敗しました。ネットワークを確認してください。';
+    }
+
+    btn.textContent = '✦ AIで整形する';
+    btn.disabled = false;
+  }
+
+  function clearForm() {
+    const panel = document.getElementById('panel-' + currentTab);
+    panel.querySelectorAll('input[type=text], input[type=date], textarea').forEach(el => el.value = '');
+    panel.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(el => el.checked = false);
+  }
+</script>
+</body>
+</html>
